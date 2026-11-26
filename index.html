@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Plan de Diabetes - Controles y Menús</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.1em; opacity: 0.9; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .tab-btn { background: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1em; cursor: pointer; font-weight: 600; transition: all 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .tab-btn.active { background: #ff6b6b; color: white; transform: scale(1.05); }
+        .tab-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .content { display: none; animation: fadeIn 0.5s ease; }
+        .content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .section { background: white; border-radius: 12px; padding: 30px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .section h2 { color: #667eea; margin-bottom: 20px; font-size: 1.8em; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        .section h3 { color: #764ba2; margin-top: 20px; margin-bottom: 15px; font-size: 1.3em; }
+        .alert-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .alert-table th, .alert-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .alert-table th { background: #f5f5f5; font-weight: 600; color: #333; }
+        .alert-table tr:hover { background: #f9f9f9; }
+        .food-card { background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ff6b6b; margin: 15px 0; }
+        .food-card h4 { color: #333; margin-bottom: 10px; font-size: 1.1em; }
+        .food-card li { list-style: none; padding: 6px 0; color: #666; font-size: 0.95em; }
+        .tips { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin: 15px 0; }
+        .tips h4 { color: #856404; margin-bottom: 10px; }
+        .tips p { color: #856404; font-size: 0.95em; line-height: 1.6; }
+        .meal { background: #f0f4ff; padding: 15px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid #764ba2; }
+        .meal-time { font-weight: 700; color: #764ba2; font-size: 1.1em; margin-bottom: 8px; }
+        .menu-selector { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .menu-btn { background: #667eea; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; font-size: 0.95em; }
+        .menu-btn.active { background: #ff6b6b; transform: scale(1.05); }
+        .menu-btn:hover { opacity: 0.9; }
+        .menu-day { background: #f0f4ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #667eea; display: none; }
+        .menu-day.active { display: block; }
+        .menu-day h3 { color: #667eea; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; }
+        .modal.active { display: flex; align-items: flex-start; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; max-width: 600px; margin-top: 50px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { color: #667eea; margin: 0; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: #999; }
+        @media (max-width: 768px) { header h1 { font-size: 1.8em; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="versiculoDelDia" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center;">
+            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">✝️ Versículo del Día (NTV)</div>
+            <p id="textoVersículo" style="font-size: 1.2em; line-height: 1.8; font-style: italic; margin-bottom: 12px;"></p>
+            <p id="referenciaVersículo" style="font-size: 0.95em; opacity: 0.95; margin: 0;"></p>
+        </div>
+        
+        <header>
+            <h1>📋 Plan de Diabetes</h1>
+            <p>Gestión de controles de glucemia y menús saludables</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('controles')">Controles de Glucemia</button>
+            <button class="tab-btn" onclick="switchTab('dieta')">Dieta y Alimentos</button>
+            <button class="tab-btn" onclick="switchTab('menus')">Menús Variados</button>
+            <button class="tab-btn" onclick="switchTab('registro')">Registro Diario</button>
+        </div>
+        
+        <!-- CONTROLES DE GLUCEMIA -->
+        <div id="controles" class="content active">
+            <div class="section">
+                <h2>💉 Controles de Glucemia e Insulina</h2>
+                
+                <h3>Insulina NPH (Blanca) - Lapidera</h3>
+                <div class="food-card">
+                    <h4>Dosis de NPH</h4>
+                    <ul>
+                        <li>✓ 30 unidades antes del desayuno (Entreverar previo a inyectar)</li>
+                        <li>✓ 20 unidades antes del almuerzo (Entreverar previo a inyectar)</li>
+                        <li>✓ 20 unidades antes de la cena (Entreverar previo a inyectar)</li>
+                    </ul>
+                </div>
+                
+                <h3>Insulina Apidra (Transparente) - Corrección</h3>
+                <div class="food-card">
+                    <h4>Dosis de Apidra (Suplementaria)</h4>
+                    <ul>
+                        <li>✓ 4 unidades antes del desayuno</li>
+                        <li>✓ 6 unidades antes del almuerzo</li>
+                        <li>✓ 4 unidades antes de la merienda</li>
+                        <li>✓ 6 unidades antes de la cena</li>
+                    </ul>
+                </div>
+                
+                <h3>Ajuste Según Valor de Glucosa</h3>
+                <table class="alert-table">
+                    <thead>
+                        <tr>
+                            <th>Valor de Glucosa</th>
+                            <th>Unidades de Apidra a Sumar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>&gt; 180</td><td><strong>+2 unidades</strong></td></tr>
+                        <tr><td>&gt; 200</td><td><strong>+3 unidades</strong></td></tr>
+                        <tr><td>&gt; 250</td><td><strong>+4 unidades</strong></td></tr>
+                        <tr><td>&gt; 300</td><td><strong>+5 unidades</strong></td></tr>
+                        <tr><td>&gt; 350</td><td><strong>+6 unidades</strong></td></tr>
+                        <tr><td>&gt; 400</td><td><strong>+7 unidades</strong></td></tr>
+                    </tbody>
+                </table>
+                
+                <div class="tips">
+                    <h4>⚠️ Hipoglucemia (Glucosa &lt; 70)</h4>
+                    <p><strong>Síntomas:</strong> Sudoración, mareos, temblor, dolor de cabeza o dolor abdominal</p>
+                    <p><strong>Acción inmediata:</strong> Tomar 1 vaso de agua con 2 cucharadas de azúcar O 1 cucharada de miel O 1 vaso de refresco común</p>
+                    <p><strong>Revisar a los 15 minutos.</strong> Si continúa bajo 70, tomar nuevamente. Si sube &gt; 70, comer una colación.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DIETA Y ALIMENTOS -->
+        <div id="dieta" class="content">
+            <div class="section">
+                <h2>🥗 Dieta de Iniciación de Diabético</h2>
+                
+                <h3>Bebidas de Consumo Libre</h3>
+                <div class="food-card">
+                    <h4>✅ Permitidas</h4>
+                    <ul>
+                        <li>Agua</li>
+                        <li>Caldo desgrasado</li>
+                        <li>Gelatina dietética</li>
+                    </ul>
+                </div>
+                
+                <h3>Alimentos Prohibidos</h3>
+                <div class="food-card">
+                    <h4>❌ NO CONSUMIR</h4>
+                    <ul>
+                        <li>Azúcar, dulces, miel, mermeladas, jaleas</li>
+                        <li>Refrescos dulces, jugos con azúcar</li>
+                        <li>Golosinas, chocolates, helados con azúcar</li>
+                        <li>Tortas, pasteles, alfajores, facturas</li>
+                        <li>Bebidas alcohólicas, mayonesa, crema doble, manteca, frituras</li>
+                    </ul>
+                </div>
+                
+                <h3>Alimentos Permitidos - Desayuno y Merienda</h3>
+                <div class="food-card">
+                    <ul>
+                        <li>1 taza de leche descremada o yogur descremado sin azúcar</li>
+                        <li>2 rodajas de pan o 2 galletas marinas o 6 galletitas</li>
+                        <li>Mermeladas dietéticas (ADU) o queso magro</li>
+                    </ul>
+                </div>
+                
+                <h3>Alimentos Permitidos - Almuerzo y Cena</h3>
+                <div class="food-card">
+                    <ul>
+                        <li><strong>Proteína:</strong> 150g de carne, pollo, pescado, cerdo magro o 1 huevo (diario)</li>
+                        <li><strong>Verduras:</strong> Crudas o cocidas - Medio plato</li>
+                        <li><strong>Carbohidratos:</strong> ¼ plato (papa, boniato, choclo, polenta, arroz, pasta)</li>
+                        <li><strong>Frutas:</strong> Hasta 4 medianas por día (banana, higo, uva, níspero)</li>
+                        <li><strong>Aceite:</strong> En crudo para aderezar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MENÚS VARIADOS -->
+        <div id="menus" class="content">
+            <div class="section">
+                <h2>🍽️ Menús de la Semana</h2>
+                
+                <div class="menu-selector">
+                    <button class="menu-btn active" onclick="switchMenu('menu1')">Lunes</button>
+                    <button class="menu-btn" onclick="switchMenu('menu2')">Martes</button>
+                    <button class="menu-btn" onclick="switchMenu('menu3')">Miércoles</button>
+                </div>
+                
+                <div id="menu1" class="menu-day active">
+                    <h3>📅 Lunes</h3>
+                    <div class="meal"><div class="meal-time">🌅 Desayuno</div>1 taza leche • 2 tostadas • Queso magro</div>
+                    <div class="meal"><div class="meal-time">☀️ Almuerzo</div>150g pollo • Ensalada • ¼ arroz • Aceite</div>
+                    <div class="meal"><div class="meal-time">🌤️ Merienda</div>1 taza té • 6 galletitas • Queso</div>
+                    <div class="meal"><div class="meal-time">🌙 Cena</div>150g pescado • Verduras • ¼ papa • Aceite</div>
+                </div>
+                
+                <div id="menu2" class="menu-day">
+                    <h3>📅 Martes</h3>
+                    <div class="meal"><div class="meal-time">🌅 Desayuno</div>1 taza yogur • 2 rodajas pan • Mermelada</div>
+                    <div class="meal"><div class="meal-time">☀️ Almuerzo</div>150g carne • Ensalada • ¼ pasta • Aceite</div>
+                    <div class="meal"><div class="meal-time">🌤️ Merienda</div>1 taza leche • 2 tostadas • Queso</div>
+                    <div class="meal"><div class="meal-time">🌙 Cena</div>2 huevos • Verduras • ¼ polenta • Aceite</div>
+                </div>
+                
+                <div id="menu3" class="menu-day">
+                    <h3>📅 Miércoles</h3>
+                    <div class="meal"><div class="meal-time">🌅 Desayuno</div>1 taza leche • 6 galletitas • Queso</div>
+                    <div class="meal"><div class="meal-time">☀️ Almuerzo</div>150g pollo • Verduras • ¼ boniato • Aceite</div>
+                    <div class="meal"><div class="meal-time">🌤️ Merienda</div>1 taza té • 2 tostadas • Queso</div>
+                    <div class="meal"><div class="meal-time">🌙 Cena</div>150g pescado • Ensalada • ¼ choclo • Aceite</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- REGISTRO DIARIO -->
+        <div id="registro" class="content">
+            <div class="section">
+                <h2>📊 Registro Diario de Glucosa</h2>
+                
+                <div style="background: #e7f5ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="color: #1971c2;"><strong>💡 Tip:</strong> Registra cada comida conforme la midas. Presiona ✓ para guardar cada valor por separado.</p>
+                </div>
+                
+                <h3>Ingresa los Valores</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 20px; align-items: flex-end;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">📅 Selecciona Fecha</label>
+                        <input type="date" id="registroFecha" onchange="actualizarEstadoComidas()" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <button style="background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="cargarFecha()">📂 Cargar</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: #f0f9ff; padding: 15px; border-radius: 10px; border: 2px solid #667eea;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">🌅 Antes Desayuno</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="registroDesayuno" placeholder="mg/dL" min="0" max="600" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <button style="background: #667eea; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="guardarComida('desayuno')">✓</button>
+                        </div>
+                        <small id="estadoDesayuno" style="color: #666; display: block; margin-top: 5px;">Sin registrar</small>
+                    </div>
+                    
+                    <div style="background: #fff5f0; padding: 15px; border-radius: 10px; border: 2px solid #ff9776;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">☀️ Antes Almuerzo</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="registroAlmuerzo" placeholder="mg/dL" min="0" max="600" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <button style="background: #ff9776; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="guardarComida('almuerzo')">✓</button>
+                        </div>
+                        <small id="estadoAlmuerzo" style="color: #666; display: block; margin-top: 5px;">Sin registrar</small>
+                    </div>
+                    
+                    <div style="background: #fffbf0; padding: 15px; border-radius: 10px; border: 2px solid #ffc078;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">🌤️ Antes Merienda</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="registroMerienda" placeholder="mg/dL" min="0" max="600" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <button style="background: #ffc078; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="guardarComida('merienda')">✓</button>
+                        </div>
+                        <small id="estadoMerienda" style="color: #666; display: block; margin-top: 5px;">Sin registrar</small>
+                    </div>
+                    
+                    <div style="background: #f0f5ff; padding: 15px; border-radius: 10px; border: 2px solid #764ba2;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">🌙 Antes Cena</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="registroCena" placeholder="mg/dL" min="0" max="600" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            <button style="background: #764ba2; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="guardarComida('cena')">✓</button>
+                        </div>
+                        <small id="estadoCena" style="color: #666; display: block; margin-top: 5px;">Sin registrar</small>
+                    </div>
+                </div>
+                
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">📝 Notas del Día</label>
+                    <input type="text" id="registroNotas" placeholder="Ej: tomé gaseosa, hice ejercicio..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
+                    <button style="background: #51cf66; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;" onclick="guardarNotasDia()">💾 Guardar Notas</button>
+                    <button style="background: #764ba2; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;" onclick="limpiarFormulario()">🔄 Limpiar</button>
+                    <button style="background: #ff6b6b; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;" onclick="exportarDatos()">📥 Excel</button>
+                </div>
+                
+                <div id="mensajeGuardado" style="display: none; background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #51cf66;">
+                    ✅ ¡Guardado!
+                </div>
+                
+                <div id="modalEditar" class="modal">
+                    <input type="hidden" id="registroFechaEditar">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>✏️ Editar Registro</h3>
+                            <button class="close-btn" onclick="cerrarModal()">✕</button>
+                        </div>
+                        
+                        <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                            <strong>Fecha:</strong> <span id="modalFechaDisplay" style="color: #667eea;"></span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">🌅 Desayuno</label>
+                                <input type="number" id="modalDesayuno" placeholder="mg/dL" min="0" max="600" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">☀️ Almuerzo</label>
+                                <input type="number" id="modalAlmuerzo" placeholder="mg/dL" min="0" max="600" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">🌤️ Merienda</label>
+                                <input type="number" id="modalMerienda" placeholder="mg/dL" min="0" max="600" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">🌙 Cena</label>
+                                <input type="number" id="modalCena" placeholder="mg/dL" min="0" max="600" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">📝 Notas</label>
+                            <input type="text" id="modalNotas" placeholder="Notas..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="guardarEdicion()" style="flex: 1; background: #51cf66; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✓ Guardar</button>
+                            <button onclick="cerrarModal()" style="flex: 1; background: #999; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 40px;">📈 Histórico de Registros</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <input type="text" id="filtroFecha" placeholder="Buscar por fecha (YYYY-MM-DD)" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; margin-right: 10px; width: 200px;">
+                    <button style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;" onclick="filtrarRegistros()">🔍 Buscar</button>
+                    <button style="background: #764ba2; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 5px;" onclick="limpiarFiltro()">Ver Todo</button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table class="alert-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>🌅 Desayuno</th>
+                                <th>☀️ Almuerzo</th>
+                                <th>🌤️ Merienda</th>
+                                <th>🌙 Cena</th>
+                                <th>Promedio</th>
+                                <th>Notas</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTabla">
+                            <tr><td colspan="8" style="text-align: center; color: #999; padding: 30px;">No hay registros aún</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="estadisticas" style="display: none; margin-top: 30px;">
+                    <h3>📊 Estadísticas</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">Promedio General</div>
+                            <div id="promedioGeneral" style="font-size: 2em; font-weight: bold;">--</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #51cf66 0%, #40c057 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">Total Registros</div>
+                            <div id="totalRegistros" style="font-size: 2em; font-weight: bold;">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Versículos diarios en NTV
+        const versiculos = [
+            { texto: "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.", ref: "Juan 3:16" },
+            { texto: "Encomienda al Señor tu camino; confía en él, y él actuará.", ref: "Salmo 37:5" },
+            { texto: "Te he amado con amor eterno; por eso te he prolongado mi misericordia.", ref: "Jeremías 31:3" },
+            { texto: "Vosotros sois la luz del mundo; una ciudad asentada sobre un monte no se puede esconder.", ref: "Mateo 5:14" },
+            { texto: "No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo.", ref: "Isaías 41:10" },
+            { texto: "Mas el fruto del Espíritu es amor, gozo, paz, paciencia, benignidad, bondad, fe, mansedumbre y templanza.", ref: "Gálatas 5:22-23" },
+            { texto: "Porque sabemos que a los que aman a Dios, todas las cosas les ayudan a bien.", ref: "Romanos 8:28" },
+            { texto: "Deléitate en el Señor, y él te concederá los deseos de tu corazón.", ref: "Salmo 37:4" },
+            { texto: "Venid a mí todos los que estáis trabajados y cargados, y yo os haré descansar.", ref: "Mateo 11:28" },
+            { texto: "Porque Dios no nos ha dado espíritu de cobardía, sino de poder, de amor y de dominio propio.", ref: "2 Timoteo 1:7" },
+            { texto: "Estad siempre gozosos. Orad sin cesar. Dad gracias en todo, porque esta es la voluntad de Dios para vosotros en Cristo Jesús.", ref: "1 Tesalonicenses 5:16-18" },
+            { texto: "Mi Dios, pues, suplirá todo lo que os falta conforme a sus riquezas en gloria en Cristo Jesús.", ref: "Filipenses 4:19" },
+            { texto: "Fíate de Jehová de todo tu corazón, y no te apoyes en tu propia prudencia.", ref: "Proverbios 3:5" },
+            { texto: "La paz os dejo; mi paz os doy; no os la doy como el mundo la da. No se turbe vuestro corazón, ni tenga miedo.", ref: "Juan 14:27" },
+            { texto: "Porque la palabra de Dios es viva y eficaz, y más cortante que toda espada de dos filos.", ref: "Hebreos 4:12" },
+            { texto: "Guarda tu corazón más que todas las cosas, porque de él mana la vida.", ref: "Proverbios 4:23" },
+            { texto: "Quiero recordarte que avives el don de Dios que hay en ti por la imposición de mis manos.", ref: "2 Timoteo 1:6" },
+            { texto: "Acerquémonos, pues, confiadamente al trono de la gracia, para alcanzar misericordia y hallar gracia para el oportuno socorro.", ref: "Hebreos 4:16" },
+            { texto: "Y el Dios de paz estará con vosotros.", ref: "Filipenses 4:9" },
+            { texto: "Pero a todos los que le recibieron, a los que creen en su nombre, les dio potestad de ser hechos hijos de Dios.", ref: "Juan 1:12" },
+            { texto: "Porque somos hechura de Dios, creados en Cristo Jesús para buenas obras, las cuales Dios preparó de antemano para que anduviésemos en ellas.", ref: "Efesios 2:10" },
+            { texto: "No os afanéis por nada; antes bien, en toda ocasión, presentad vuestras peticiones a Dios en oración y ruego, con acción de gracias.", ref: "Filipenses 4:6" },
+            { texto: "Porque donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos.", ref: "Mateo 18:20" },
+            { texto: "Mas gracias sean dadas a Dios, que nos da la victoria por medio de nuestro Señor Jesucristo.", ref: "1 Corintios 15:57" },
+            { texto: "Sean vuestras costumbres sin avaricia, contentos con lo que tenéis ahora; porque él dijo: No te desampararé, ni te dejaré.", ref: "Hebreos 13:5" },
+            { texto: "Lámpara es a mis pies tu palabra, y lumbrera a mi camino.", ref: "Salmo 119:105" },
+            { texto: "Mira que te mando que te esfuerces y seas valiente; no temas, ni desmayes, porque Jehová tu Dios estará contigo en dondequiera que vayas.", ref: "Josué 1:9" },
+            { texto: "Si alguno de vosotros tiene falta de sabiduría, pídala a Dios, el cual da a todos abundantemente y sin reproche, y le será dada.", ref: "Santiago 1:5" },
+            { texto: "Porque nada es imposible para Dios.", ref: "Lucas 1:37" },
+            { texto: "Pero Cristo está ahora a la diestra de Dios; y también intercede por nosotros.", ref: "Romanos 8:34" },
+            { texto: "Y sabemos que a los que aman a Dios, todas las cosas les ayudan a bien, esto es, a los que conforme a su propósito son llamados.", ref: "Romanos 8:28" },
+            { texto: "Porque por gracia sois salvos por medio de la fe; y esto no de vosotros, pues es don de Dios.", ref: "Efesios 2:8" },
+            { texto: "No mirando nosotros las cosas que se ven, sino las que no se ven; pues las cosas que se ven son temporales, pero las que no se ven son eternas.", ref: "2 Corintios 4:18" },
+            { texto: "Yo soy el camino, y la verdad, y la vida; nadie viene al Padre, sino por mí.", ref: "Juan 14:6" },
+            { texto: "Pero cuando venga el Espíritu de verdad, él os guiará a toda la verdad.", ref: "Juan 16:13" },
+            { texto: "Porque Dios es amor.", ref: "1 Juan 4:8" },
+            { texto: "Todos hemos pecado y estamos destituidos de la gloria de Dios, pero somos justificados gratuitamente por su gracia.", ref: "Romanos 3:23-24" },
+            { texto: "En esto hemos conocido y creído el amor que Dios tiene para nosotros. Dios es amor.", ref: "1 Juan 4:16" },
+            { texto: "Nada pues hay ahora de condenación para los que están en Cristo Jesús.", ref: "Romanos 8:1" },
+            { texto: "Y ahora, pequeñitos, permaneced en él, para que cuando se manifieste, tengamos confianza, y no nos avergoncemos de él en su venida.", ref: "1 Juan 2:28" },
+            { texto: "Porque el Señor es bueno; para siempre es su misericordia, y su verdad por todas las generaciones.", ref: "Salmo 100:5" },
+            { texto: "Si Dios es por nosotros, ¿quién contra nosotros?", ref: "Romanos 8:31" },
+            { texto: "Porque no nos ha dado Dios espíritu de cobardía, sino de poder, de amor y de dominio propio.", ref: "2 Timoteo 1:7" },
+            { texto: "El que cree en mí, aunque esté muerto, vivirá. Y todo aquel que vive y cree en mí, no morirá eternamente.", ref: "Juan 11:25-26" },
+            { texto: "Así que, hermanos, os ruego por las misericordias de Dios, que presentéis vuestros cuerpos en sacrificio vivo, santo y agradable a Dios.", ref: "Romanos 12:1" },
+            { texto: "Y de su plenitud tomamos todos, y gracia por gracia.", ref: "Juan 1:16" },
+            { texto: "Por lo cual estoy seguro de que ni la muerte, ni la vida, ni ángeles, ni principados, ni potestades, ni lo presente, ni lo porvenir... nada nos podrá separar del amor de Dios.", ref: "Romanos 8:38-39" },
+            { texto: "Porque vivo, vosotros también viviréis.", ref: "Juan 14:19" },
+            { texto: "Mas os digo que de toda palabra ociosa que hablen los hombres, de ella darán cuenta en el día del juicio.", ref: "Mateo 12:36" },
+            { texto: "El Señor es mi luz y mi salvación; ¿de quién temeré?", ref: "Salmo 27:1" },
+            { texto: "Porque todo lo que es nacido de Dios vence al mundo; y esta es la victoria que ha vencido al mundo, nuestra fe.", ref: "1 Juan 5:4" }
+        ];
+        
+        function obtenerVersiculoDelDia() {
+            const hoy = new Date();
+            const inicio = new Date(hoy.getFullYear(), 0, 0);
+            const diff = hoy - inicio;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dia = Math.floor(diff / oneDay);
+            const indice = dia % versiculos.length;
+            return versiculos[indice];
+        }
+        
+        function mostrarVersiculoDelDia() {
+            const versiculo = obtenerVersiculoDelDia();
+            document.getElementById('textoVersículo').textContent = '"' + versiculo.texto + '"';
+            document.getElementById('referenciaVersículo').textContent = "— " + versiculo.ref;
+        }
+        
+        // Sistema de almacenamiento robusto para Netlify
+        const DB = {
+            key: 'glucosaRegistros_v1',
+            data: [],
+            
+            init() {
+                try {
+                    const stored = localStorage.getItem(this.key);
+                    this.data = stored ? JSON.parse(stored) : [];
+                } catch(e) {
+                    console.warn('localStorage no disponible');
+                    this.data = [];
+                }
+            },
+            
+            save() {
+                try {
+                    localStorage.setItem(this.key, JSON.stringify(this.data));
+                } catch(e) {
+                    console.warn('No se pudo guardar en localStorage');
+                }
+            },
+            
+            getAll() {
+                return this.data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            },
+            
+            getByFecha(fecha) {
+                return this.data.find(r => r.fecha === fecha);
+            },
+            
+            add(registro) {
+                const existing = this.data.findIndex(r => r.fecha === registro.fecha);
+                if (existing >= 0) {
+                    this.data[existing] = registro;
+                } else {
+                    this.data.push(registro);
+                }
+                this.save();
+            },
+            
+            delete(id) {
+                this.data = this.data.filter(r => r.id !== id);
+                this.save();
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarVersiculoDelDia();
+            DB.init();
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('registroFecha').value = hoy;
+            cargarRegistros();
+            actualizarEstadoComidas();
+        });
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            if (tabName === 'registro') cargarRegistros();
+        }
+        
+        function switchMenu(menuName) {
+            document.querySelectorAll('.menu-day').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(menuName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function cargarFecha() {
+            const fecha = document.getElementById('registroFecha').value;
+            if (!fecha) { alert('Selecciona una fecha'); return; }
+            
+            const registro = DB.getByFecha(fecha);
+            
+            if (registro) {
+                document.getElementById('registroDesayuno').value = registro.desayuno || '';
+                document.getElementById('registroAlmuerzo').value = registro.almuerzo || '';
+                document.getElementById('registroMerienda').value = registro.merienda || '';
+                document.getElementById('registroCena').value = registro.cena || '';
+                document.getElementById('registroNotas').value = registro.notas || '';
+            } else {
+                limpiarFormulario();
+            }
+            actualizarEstadoComidas();
+        }
+        
+        function guardarComida(comida) {
+            const fecha = document.getElementById('registroFecha').value;
+            const valor = document.getElementById('registro' + comida.charAt(0).toUpperCase() + comida.slice(1)).value;
+            
+            if (!fecha) { alert('Selecciona fecha primero'); return; }
+            if (!valor) { alert('Ingresa un valor'); return; }
+            
+            let registro = DB.getByFecha(fecha);
+            
+            if (!registro) {
+                registro = { fecha, desayuno: null, almuerzo: null, merienda: null, cena: null, notas: '', id: Date.now() };
+            }
+            
+            registro[comida] = valor;
+            DB.add(registro);
+            
+            const msg = document.getElementById('mensajeGuardado');
+            msg.textContent = `✅ ${comida} guardado: ${valor}`;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 2000);
+            
+            actualizarEstadoComidas();
+            cargarRegistros();
+        }
+        
+        function guardarNotasDia() {
+            const fecha = document.getElementById('registroFecha').value;
+            const notas = document.getElementById('registroNotas').value;
+            
+            if (!fecha) { alert('Selecciona fecha'); return; }
+            
+            let registro = DB.getByFecha(fecha);
+            
+            if (!registro) { alert('Primero guarda un valor de glucosa'); return; }
+            
+            registro.notas = notas;
+            DB.add(registro);
+            
+            const msg = document.getElementById('mensajeGuardado');
+            msg.textContent = '✅ Notas guardadas';
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 2000);
+        }
+        
+        function actualizarEstadoComidas() {
+            const fecha = document.getElementById('registroFecha').value;
+            const registro = DB.getByFecha(fecha);
+            
+            ['desayuno', 'almuerzo', 'merienda', 'cena'].forEach(comida => {
+                const estado = document.getElementById('estado' + comida.charAt(0).toUpperCase() + comida.slice(1));
+                if (registro && registro[comida]) {
+                    estado.innerHTML = `<span style="background: ${getColorValor(registro[comida])}; color: white; padding: 2px 8px; border-radius: 4px;">${registro[comida]} mg/dL ✓</span>`;
+                } else {
+                    estado.textContent = 'Sin registrar';
+                    estado.style.color = '#999';
+                }
+            });
+        }
+        
+        function limpiarFormulario() {
+            document.getElementById('registroDesayuno').value = '';
+            document.getElementById('registroAlmuerzo').value = '';
+            document.getElementById('registroMerienda').value = '';
+            document.getElementById('registroCena').value = '';
+            document.getElementById('registroNotas').value = '';
+        }
+        
+        function cargarRegistros() {
+            const registros = DB.getAll();
+            const tbody = document.getElementById('cuerpoTabla');
+            
+            if (registros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999; padding: 30px;">No hay registros</td></tr>';
+                document.getElementById('estadisticas').style.display = 'none';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            registros.forEach(registro => {
+                const valores = [registro.desayuno, registro.almuerzo, registro.merienda, registro.cena].filter(v => v).map(v => parseInt(v));
+                const promedio = valores.length ? Math.round(valores.reduce((a, b) => a + b) / valores.length) : '--';
+                
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td style="font-weight: 600;">${registro.fecha}</td>
+                    <td>${registro.desayuno ? `<span style="background: ${getColorValor(registro.desayuno)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.desayuno}</span>` : '-'}</td>
+                    <td>${registro.almuerzo ? `<span style="background: ${getColorValor(registro.almuerzo)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.almuerzo}</span>` : '-'}</td>
+                    <td>${registro.merienda ? `<span style="background: ${getColorValor(registro.merienda)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.merienda}</span>` : '-'}</td>
+                    <td>${registro.cena ? `<span style="background: ${getColorValor(registro.cena)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.cena}</span>` : '-'}</td>
+                    <td style="font-weight: 600;">${promedio}</td>
+                    <td style="font-size: 0.9em; color: #666;">${registro.notas || '-'}</td>
+                    <td><button style="background: #667eea; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; margin-right: 5px;" onclick="abrirEditar('${registro.fecha}')">✏️</button><button style="background: #ff6b6b; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;" onclick="eliminarRegistro(${registro.id})">🗑️</button></td>
+                `;
+                tbody.appendChild(fila);
+            });
+            
+            calcularEstadisticas(registros);
+        }
+        
+        function abrirEditar(fecha) {
+            const registro = DB.getByFecha(fecha);
+            
+            document.getElementById('modalFechaDisplay').textContent = fecha;
+            document.getElementById('modalDesayuno').value = registro?.desayuno || '';
+            document.getElementById('modalAlmuerzo').value = registro?.almuerzo || '';
+            document.getElementById('modalMerienda').value = registro?.merienda || '';
+            document.getElementById('modalCena').value = registro?.cena || '';
+            document.getElementById('modalNotas').value = registro?.notas || '';
+            document.getElementById('registroFechaEditar').value = fecha;
+            
+            document.getElementById('modalEditar').classList.add('active');
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalEditar').classList.remove('active');
+        }
+        
+        function guardarEdicion() {
+            const fecha = document.getElementById('registroFechaEditar').value;
+            const desayuno = document.getElementById('modalDesayuno').value;
+            const almuerzo = document.getElementById('modalAlmuerzo').value;
+            const merienda = document.getElementById('modalMerienda').value;
+            const cena = document.getElementById('modalCena').value;
+            const notas = document.getElementById('modalNotas').value;
+            
+            let registro = DB.getByFecha(fecha);
+            
+            if (registro) {
+                if (desayuno) registro.desayuno = desayuno;
+                if (almuerzo) registro.almuerzo = almuerzo;
+                if (merienda) registro.merienda = merienda;
+                if (cena) registro.cena = cena;
+                registro.notas = notas;
+                
+                DB.add(registro);
+                cerrarModal();
+                cargarRegistros();
+                
+                const msg = document.getElementById('mensajeGuardado');
+                msg.textContent = '✅ Actualizado';
+                msg.style.display = 'block';
+                setTimeout(() => msg.style.display = 'none', 2000);
+            }
+        }
+        
+        function eliminarRegistro(id) {
+            if (confirm('¿Eliminar este registro?')) {
+                DB.delete(id);
+                cargarRegistros();
+            }
+        }
+        
+        function filtrarRegistros() {
+            const filtro = document.getElementById('filtroFecha').value;
+            let registros = DB.getAll();
+            if (filtro) registros = registros.filter(r => r.fecha === filtro);
+            
+            const tbody = document.getElementById('cuerpoTabla');
+            if (registros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999; padding: 30px;">No encontrado</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            registros.forEach(registro => {
+                const valores = [registro.desayuno, registro.almuerzo, registro.merienda, registro.cena].filter(v => v).map(v => parseInt(v));
+                const promedio = valores.length ? Math.round(valores.reduce((a, b) => a + b) / valores.length) : '--';
+                
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td style="font-weight: 600;">${registro.fecha}</td>
+                    <td>${registro.desayuno ? `<span style="background: ${getColorValor(registro.desayuno)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.desayuno}</span>` : '-'}</td>
+                    <td>${registro.almuerzo ? `<span style="background: ${getColorValor(registro.almuerzo)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.almuerzo}</span>` : '-'}</td>
+                    <td>${registro.merienda ? `<span style="background: ${getColorValor(registro.merienda)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.merienda}</span>` : '-'}</td>
+                    <td>${registro.cena ? `<span style="background: ${getColorValor(registro.cena)}; color: white; padding: 4px 8px; border-radius: 4px;">${registro.cena}</span>` : '-'}</td>
+                    <td style="font-weight: 600;">${promedio}</td>
+                    <td style="font-size: 0.9em; color: #666;">${registro.notas || '-'}</td>
+                    <td><button style="background: #667eea; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; margin-right: 5px;" onclick="abrirEditar('${registro.fecha}')">✏️</button><button style="background: #ff6b6b; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;" onclick="eliminarRegistro(${registro.id})">🗑️</button></td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+        
+        function limpiarFiltro() {
+            document.getElementById('filtroFecha').value = '';
+            cargarRegistros();
+        }
+        
+        function getColorValor(valor) {
+            valor = parseInt(valor);
+            if (valor < 70) return '#ff6b6b';
+            if (valor <= 130) return '#51cf66';
+            if (valor <= 180) return '#ffc107';
+            return '#fa5252';
+        }
+        
+        function calcularEstadisticas(registros) {
+            const todos = [];
+            registros.forEach(registro => {
+                [registro.desayuno, registro.almuerzo, registro.merienda, registro.cena].forEach(valor => {
+                    if (valor) todos.push(parseInt(valor));
+                });
+            });
+            
+            const promedio = todos.length ? Math.round(todos.reduce((a, b) => a + b) / todos.length) : 0;
+            document.getElementById('promedioGeneral').textContent = promedio;
+            document.getElementById('totalRegistros').textContent = registros.length;
+            document.getElementById('estadisticas').style.display = 'block';
+        }
+        
+        function exportarDatos() {
+            const registros = DB.getAll();
+            if (!registros.length) { alert('No hay datos'); return; }
+            
+            let csv = 'Fecha,Desayuno,Almuerzo,Merienda,Cena,Promedio,Notas\n';
+            registros.forEach(registro => {
+                const valores = [registro.desayuno, registro.almuerzo, registro.merienda, registro.cena].filter(v => v).map(v => parseInt(v));
+                const promedio = valores.length ? Math.round(valores.reduce((a, b) => a + b) / valores.length) : '';
+                csv += `"${registro.fecha}","${registro.desayuno || ''}","${registro.almuerzo || ''}","${registro.merienda || ''}","${registro.cena || ''}","${promedio}","${registro.notas || ''}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `glucosa-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalEditar');
+            if (event.target == modal) cerrarModal();
+        }
+    </script>
+</body>
+</html>
